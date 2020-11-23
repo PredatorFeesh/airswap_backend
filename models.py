@@ -18,9 +18,9 @@ class User(db.Model):
 
     first_name = db.Column("first_name", db.String(50), nullable=False)
     last_name = db.Column("last_name", db.String(50), nullable=False)
-    image = db.Column("image", db.String(100), nullable=False, default="default.jpg")
-    phone_number = db.Column("phone_number", db.String(10), nullable=False)
-    description = db.Column("description", db.Text, nullable=False)
+    image = db.Column("image", db.String(100), nullable=True, default="default.jpg")
+    phone_number = db.Column("phone_number", db.String(10), nullable=True)
+    description = db.Column("description", db.Text, nullable=True)
 
     listing = db.relationship("Listing", backref="owner", uselist=False)
     requested = db.relationship("User", secondary=requests,
