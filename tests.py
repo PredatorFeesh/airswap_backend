@@ -13,11 +13,9 @@ class UserModelCase(unittest.TestCase):
         db.drop_all()
 
     def test_requests(self):
-        user1 = User(email="testone@email.com", first_name="John", last_name="Doe", password="test123",
-                     image="default.jpg", phone_number="1234567890", description="Test description")
+        user1 = User(email="testone@email.com", first_name="John", last_name="Doe", password="test123")
 
-        user2 = User(email="testtwo@email.com", first_name="Jane", last_name="Smith", password="test123",
-                     image="default.jpg", phone_number="0987654321", description="Another test description")
+        user2 = User(email="testtwo@email.com", first_name="Jane", last_name="Smith", password="test123")
 
         db.session.add(user1)
         db.session.add(user2)
@@ -40,8 +38,7 @@ class UserModelCase(unittest.TestCase):
         self.assertEqual(user2.requests.count(), 0)
 
     def test_listings(self):
-        user = User(email="testone@email.com", first_name="John", last_name="Doe", password="test123",
-                    image="default", phone_number="1234567890", description="Test description")
+        user = User(email="testone@email.com", first_name="John", last_name="Doe", password="test123")
         city = City(name="New York")
         listing = Listing(address="Test address", image="default.jpg", description="Test description",
                           is_listed=True)
@@ -63,6 +60,35 @@ class UserModelCase(unittest.TestCase):
         self.assertEqual(user.listing, listing)
 
         self.assertEqual(city.listings.first(), listing)
+
+    def test_follows(self):
+        user1 = User(email="testone@email.com", first_name="John", last_name="Doe", password="test123")
+        user2 = User(email="testtwo@email.com", first_name="Jane", last_name="Smith", password="test123")
+        city1 = City(name="New York")
+        city2 = City(name="London")
+
+        db.session.add(user1)
+        db.session.add(city1)
+        db.session.add(user2)
+        db.session.add(city2)
+        db.session.commit()
+
+        user1.cities.append(city1)
+        self.assertEqual(user1.cities.count(), 1)
+        self.assertEqual(user1.cities.first(), city1)
+        self.assertEqual(city1.followers.count(), 1)
+        user1.cities.append(city2)
+        self.assertEqual(user1.cities.count(), 2)
+        self.assertEqual(city2.followers.count(), 1)
+        self.assertEqual(city2.followers.first(), user1)
+
+        user2.cities.append(city1)
+        self.assertEqual(user2.cities.count(), 1)
+        self.assertEqual(city1.followers.count(), 2)
+
+        user2.cities.remove(city1)
+        self.assertEqual(user2.cities.count(), 0)
+        self.assertEqual(city1.followers.count(), 1)
 
 
 if __name__ == '__main__':
