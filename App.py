@@ -1,10 +1,14 @@
 from flask import Flask, request
 import jwt
 import datetime
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
 app.config["SECRET_AUTH"] = "*&F78gg7878SG787g787&*G8gG**(G^*(&*G8gg78;l[po[[oin9h])23g.[.]"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///airswap.db"
+
+db = SQLAlchemy(app)
 
 
 @app.route('/login', methods=['POST'])
@@ -27,6 +31,7 @@ def login():
     # Otherwise, user auth failed!
     return {"err_type": "auth", "err_msg": "failed"}
 
+
 @app.route('/register', methods=['POST'])
 def register():
     request_json = request.get_json()
@@ -34,7 +39,7 @@ def register():
     email = request_json['email']
     password = request_json['password']
     name = request_json['name']
-    
+
     if email is None:
         return {"err_type": "email", "err_msg": "empty"}
     if password is None:
@@ -54,6 +59,7 @@ def register():
 @app.route('/', methods=['GET'])
 def home():
     return "Welcome home!"
+
 
 if __name__ == "__main__":
     app.run(port=5001)
