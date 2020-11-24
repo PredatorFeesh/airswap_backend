@@ -4,6 +4,8 @@ from flask_jwt_extended import (
     JWTManager,
     jwt_required,
     create_access_token,
+    jwt_refresh_token_required,
+    create_refresh_token,
     get_jwt_identity,
 )
 from werkzeug.security import safe_str_cmp
@@ -35,7 +37,7 @@ def register():
         or request_json["password"] is None
         or request_json["name"] is None
     ):
-        return jsonify({"err_type": "credentials", "err_msg": "empty"})
+        return jsonify({"err_type": "credentials", "err_msg": "empty"}), 400
 
     email = request_json["email"]
     password = request_json["password"]
@@ -47,7 +49,7 @@ def register():
     # Check whether user is in our database
     user_db = models.User.query.filter_by(email=email).first()
     if user_db is not None:
-        return jsonify({"err_type": "user", "err_msg": "exists"})
+        return jsonify({"err_type": "user", "err_msg": "exists"}), 400
 
     # Now add the user to the database
     # @IFTIME: Encrypt password
@@ -56,8 +58,9 @@ def register():
     db.session.commit()
 
     access_token = create_access_token(identity={"id": user_db.id})
+    refresh_token = create_refresh_token(identity={"id": user_db.id})
 
-    return jsonify({"access_token": access_token})
+    return jsonify({"access_token": access_token, "refresh_token": refresh_token}), 200
 
 
 @app.route("/login", methods=["POST"])
@@ -69,20 +72,31 @@ def login():
         or request_json["email"] is None
         or request_json["password"] is None
     ):
-        return jsonify({"err_type": "credentials", "err_msg": "empty"})
+        return jsonify({"err_type": "credentials", "err_msg": "empty"}), 400
 
     email = request_json["email"]
     password = request_json["password"]
 
     # The other fields for user as set in the Profile
-    user = models.User.query.filter_by(email=email, password=password)
+    user = models.User.query.filter_by(email=email, password=password).first()
 
+    # If we have no user
     if user is None:
-        return jsonify({"err_type": "auth", "err_msg": "bad login"})
+        return jsonify({"err_type": "auth", "err_msg": "bad login"}), 400
+
+    print(user)
 
     access_token = create_access_token(identity={"id": user.id})
+    refresh_token = create_refresh_token(identity={"id": user.id})
 
-    return jsonify(access_token=access_token)
+    return jsonify({"access_token": access_token, "refresh_token": refresh_token}), 200
+
+
+@app.route("/refresh", methods=["POST"])
+@jwt_refresh_token_required
+def refresh():
+    uid = get_jwt_identity()["id"]
+    return jsonify({"access_token": create_access_token(identity=uid)}), 200
 
 
 # @TODO REMOVE THIS. Keeping it temporarily for reference
