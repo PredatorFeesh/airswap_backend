@@ -8,6 +8,7 @@ from flask_jwt_extended import (
     create_refresh_token,
     get_jwt_identity,
 )
+from flask_cors import CORS
 from werkzeug.security import safe_str_cmp
 
 
@@ -21,6 +22,8 @@ app.config[
 ] = "*&F78gg7878SG787g787&*G8gG**(G^*(&*G8gg78;l[po[[oin9h])23g.[.]"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///airswap.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+CORS(app)
 
 jwt = JWTManager(app)
 
