@@ -87,8 +87,6 @@ def login():
     if user is None:
         return jsonify({"err_type": "auth", "err_msg": "bad login"}), 400
 
-    print(user)
-
     access_token = create_access_token(identity={"id": user.id})
     refresh_token = create_refresh_token(identity={"id": user.id})
 
