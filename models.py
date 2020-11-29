@@ -35,8 +35,6 @@ class User(db.Model):
         self.first_name = first_name
         self.last_name = last_name
 
-    # I wrote the following methods to test requests
-    # We will probably move this logic elsewhere
     def request(self, user):
         if not self.has_requested(user):
             self.requested.append(user)
@@ -49,6 +47,23 @@ class User(db.Model):
         return self.requested.filter(
             requests.c.requestee == user.id).count() > 0
 
+    def follow(self, city):
+        if not self.has_followed(city):
+            self.cities.append(city)
+
+    def unfollow(self, city):
+        if self.has_followed(city):
+            self.cities.remove(city)
+
+    # def listings_in_followed_cities(self, city):
+    #     if self.has_followed(city):
+    #         listings = city.listings.query.all()
+    #         return listings
+    #
+    def has_followed(self, city):
+        return self.cities.filter(
+            follows.c.city_id == city.id).count() > 0
+
 
 class Listing(db.Model):
     id = db.Column("id", db.Integer, primary_key=True, autoincrement=True)
@@ -56,6 +71,7 @@ class Listing(db.Model):
     image = db.Column("image", db.String(100), nullable=False, default="default.jpg")
     description = db.Column("description", db.Text, nullable=False)
     is_listed = db.Column("is_listed", db.Boolean)
+    date = db.Column("date", db.String(10))
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     city_id = db.Column(db.Integer, db.ForeignKey("city.id"))
 

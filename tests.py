@@ -103,6 +103,7 @@ class UserModelCase(unittest.TestCase):
         db.session.commit()
 
         user1.cities.append(city1)
+        # user1.follow(city1)
         self.assertEqual(user1.cities.count(), 1)
         self.assertEqual(user1.cities.first(), city1)
         self.assertEqual(city1.followers.count(), 1)
@@ -118,6 +119,9 @@ class UserModelCase(unittest.TestCase):
         user2.cities.remove(city1)
         self.assertEqual(user2.cities.count(), 0)
         self.assertEqual(city1.followers.count(), 1)
+
+    def test_querying_listings(self):
+        pass
 
 
 if __name__ == "__main__":
