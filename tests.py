@@ -5,7 +5,7 @@ import unittest
 
 class UserModelCase(unittest.TestCase):
     def setUp(self):
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
+        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite://"
         db.create_all()
 
     def tearDown(self):
@@ -13,9 +13,19 @@ class UserModelCase(unittest.TestCase):
         db.drop_all()
 
     def test_requests(self):
-        user1 = User(email="testone@email.com", first_name="John", last_name="Doe", password="test123")
+        user1 = User(
+            email="testone@email.com",
+            first_name="John",
+            last_name="Doe",
+            password="test123",
+        )
 
-        user2 = User(email="testtwo@email.com", first_name="Jane", last_name="Smith", password="test123")
+        user2 = User(
+            email="testtwo@email.com",
+            first_name="Jane",
+            last_name="Smith",
+            password="test123",
+        )
 
         db.session.add(user1)
         db.session.add(user2)
@@ -38,10 +48,19 @@ class UserModelCase(unittest.TestCase):
         self.assertEqual(user2.requests.count(), 0)
 
     def test_listings(self):
-        user = User(email="testone@email.com", first_name="John", last_name="Doe", password="test123")
+        user = User(
+            email="testone@email.com",
+            first_name="John",
+            last_name="Doe",
+            password="test123",
+        )
         city = City(name="New York")
-        listing = Listing(address="Test address", image="default.jpg", description="Test description",
-                          is_listed=True)
+        listing = Listing(
+            address="Test address",
+            image="default.jpg",
+            description="Test description",
+            is_listed=True,
+        )
 
         db.session.add(user)
         db.session.add(city)
@@ -62,8 +81,18 @@ class UserModelCase(unittest.TestCase):
         self.assertEqual(city.listings.first(), listing)
 
     def test_follows(self):
-        user1 = User(email="testone@email.com", first_name="John", last_name="Doe", password="test123")
-        user2 = User(email="testtwo@email.com", first_name="Jane", last_name="Smith", password="test123")
+        user1 = User(
+            email="testone@email.com",
+            first_name="John",
+            last_name="Doe",
+            password="test123",
+        )
+        user2 = User(
+            email="testtwo@email.com",
+            first_name="Jane",
+            last_name="Smith",
+            password="test123",
+        )
         city1 = City(name="New York")
         city2 = City(name="London")
 
@@ -91,5 +120,5 @@ class UserModelCase(unittest.TestCase):
         self.assertEqual(city1.followers.count(), 1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
