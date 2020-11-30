@@ -1,8 +1,11 @@
+from datetime import datetime
+
 from App import db
 
 follows = db.Table("follows",
                    db.Column("user_id", db.Integer, db.ForeignKey("user.id")),
-                   db.Column("city_id", db.Integer, db.ForeignKey("city.id"))
+                   db.Column("city_id", db.Integer, db.ForeignKey("city.id")),
+                   db.Column("date", db.Date)
                    )
 
 requests = db.Table("requests",
@@ -34,6 +37,7 @@ class User(db.Model):
         self.password = password
         self.first_name = first_name
         self.last_name = last_name
+        self.date = datetime.now()
 
     def request(self, user):
         if not self.has_requested(user):
@@ -47,6 +51,9 @@ class User(db.Model):
         return self.requested.filter(
             requests.c.requestee == user.id).count() > 0
 
+    def view_requests(self):
+        return self.requested.all()
+
     def follow(self, city):
         if not self.has_followed(city):
             self.cities.append(city)
@@ -55,14 +62,25 @@ class User(db.Model):
         if self.has_followed(city):
             self.cities.remove(city)
 
-    # def listings_in_followed_cities(self, city):
-    #     if self.has_followed(city):
-    #         listings = city.listings.query.all()
-    #         return listings
-    #
     def has_followed(self, city):
         return self.cities.filter(
             follows.c.city_id == city.id).count() > 0
+
+    def add_listing(self, listing):
+        self.listing = listing
+
+    def view_listings_in_followed_cities(self):
+        listings_to_view = []
+        for city in self.cities:
+            for listing in city.listings.all():
+                listings_to_view.append(listing)
+
+        try:
+            listings_to_view.sort(key=lambda listing: listing.date)
+        except TypeError:
+            print("No date provided.")
+
+        return listings_to_view
 
 
 class Listing(db.Model):
@@ -71,7 +89,7 @@ class Listing(db.Model):
     image = db.Column("image", db.String(100), nullable=False, default="default.jpg")
     description = db.Column("description", db.Text, nullable=False)
     is_listed = db.Column("is_listed", db.Boolean)
-    date = db.Column("date", db.String(10))
+    date = db.Column("date", db.Date())
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     city_id = db.Column(db.Integer, db.ForeignKey("city.id"))
 
@@ -80,6 +98,9 @@ class Listing(db.Model):
         self.image = image
         self.description = description
         self.is_listed = is_listed
+
+    def listing_clicked(self):
+        return self.user_id
 
 
 class City(db.Model):
@@ -90,3 +111,4 @@ class City(db.Model):
 
     def __init__(self, name):
         self.name = name
+
