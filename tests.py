@@ -27,24 +27,35 @@ class UserModelCase(unittest.TestCase):
             password="test123",
         )
 
+        user3 = User(
+            email="testthree@email.com",
+            first_name="Kate",
+            last_name="Green",
+            password="test123",
+        )
+
         db.session.add(user1)
         db.session.add(user2)
+        db.session.add(user3)
         db.session.commit()
         self.assertEqual(user1.requested.all(), [])
         self.assertEqual(user2.requested.all(), [])
+        self.assertEqual(user3.requested.all(), [])
 
         user1.request(user2)
-        db.session.commit()
         self.assertTrue(user1.has_requested(user2))
         self.assertEqual(user1.requested.count(), 1)
         self.assertEqual(user1.requested.first().email, "testtwo@email.com")
         self.assertEqual(user2.requests.count(), 1)
         self.assertEqual(user2.requests.first().email, "testone@email.com")
 
+        # test view_request
+        user1.request(user3)
+        self.assertListEqual(user1.view_requests(), [user2, user3])
+
         user1.remove_request(user2)
-        db.session.commit()
         self.assertFalse(user1.has_requested(user2))
-        self.assertEqual(user1.requested.count(), 0)
+        self.assertEqual(user1.requested.count(), 1)
         self.assertEqual(user2.requests.count(), 0)
 
     def test_listings(self):
@@ -74,11 +85,13 @@ class UserModelCase(unittest.TestCase):
         self.assertEqual(listing.location.id, city.id)
         self.assertEqual(listing.location.name, "New York")
 
-        listing.owner = user
+        user.add_listing(listing)
         self.assertEqual(listing.owner.id, user.id)
         self.assertEqual(user.listing, listing)
 
         self.assertEqual(city.listings.first(), listing)
+
+        self.assertEqual(listing.listing_clicked(), listing.owner.id)
 
     def test_follows(self):
         user1 = User(
@@ -102,7 +115,7 @@ class UserModelCase(unittest.TestCase):
         db.session.add(city2)
         db.session.commit()
 
-        user1.cities.append(city1)
+        user1.follow(city1)
         self.assertEqual(user1.cities.count(), 1)
         self.assertEqual(user1.cities.first(), city1)
         self.assertEqual(city1.followers.count(), 1)
@@ -111,13 +124,48 @@ class UserModelCase(unittest.TestCase):
         self.assertEqual(city2.followers.count(), 1)
         self.assertEqual(city2.followers.first(), user1)
 
-        user2.cities.append(city1)
+        user2.follow(city1)
         self.assertEqual(user2.cities.count(), 1)
         self.assertEqual(city1.followers.count(), 2)
 
-        user2.cities.remove(city1)
+        user2.unfollow(city1)
         self.assertEqual(user2.cities.count(), 0)
         self.assertEqual(city1.followers.count(), 1)
+
+    def test_view_listings(self):
+        user = User(
+            email="testone@email.com",
+            first_name="John",
+            last_name="Doe",
+            password="test123",
+        )
+        city1 = City(name="New York")
+        listing1 = Listing(
+            address="Test address",
+            image="default.jpg",
+            description="Test description",
+            is_listed=True,
+        )
+        listing2 = Listing(
+            address="Test address 2",
+            image="default.jpg",
+            description="Test description 2",
+            is_listed=True,
+        )
+
+        db.session.add(user)
+        db.session.add(city1)
+        db.session.add(listing1)
+        db.session.commit()
+
+        listing1.location = city1
+        listing2.location = city1
+        user.follow(city1)
+
+        self.assertListEqual(user.view_listings_in_followed_cities(), [listing1, listing2])
+
+        user.unfollow(city1)
+        self.assertListEqual(user.view_listings_in_followed_cities(), [])
 
 
 if __name__ == "__main__":

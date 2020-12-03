@@ -1,19 +1,5 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from flask_jwt_extended import (
-    JWTManager,
-    jwt_required,
-    create_access_token,
-    jwt_refresh_token_required,
-    create_refresh_token,
-    get_jwt_identity,
-)
-from flask_cors import CORS
-from werkzeug.security import safe_str_cmp
-
-
-import models
-
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
@@ -23,13 +9,24 @@ app.config[
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///airswap.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+db = SQLAlchemy(app)
+
+from flask_jwt_extended import (
+    JWTManager,
+    jwt_required,
+    create_access_token,
+    jwt_refresh_token_required,
+    create_refresh_token,
+    get_jwt_identity,
+)
+
+from flask_cors import CORS
+from werkzeug.security import safe_str_cmp
+import models
+
 CORS(app)
 
 jwt = JWTManager(app)
-
-db = SQLAlchemy(app)
-
-
 @app.route("/register", methods=["POST"])
 def register():
     request_json = request.json
