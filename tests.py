@@ -1,5 +1,6 @@
 from App import app, db
 from models import User, Listing, City
+from datetime import datetime
 import unittest
 
 
@@ -71,6 +72,7 @@ class UserModelCase(unittest.TestCase):
             image="default.jpg",
             description="Test description",
             is_listed=True,
+            date=datetime.now()
         )
 
         db.session.add(user)
@@ -145,12 +147,14 @@ class UserModelCase(unittest.TestCase):
             image="default.jpg",
             description="Test description",
             is_listed=True,
+            date=datetime.now()
         )
         listing2 = Listing(
             address="Test address 2",
             image="default.jpg",
             description="Test description 2",
             is_listed=True,
+            date=datetime.now()
         )
 
         db.session.add(user)
@@ -162,10 +166,10 @@ class UserModelCase(unittest.TestCase):
         listing2.location = city1
         user.follow(city1)
 
-        self.assertListEqual(user.view_listings_in_followed_cities(), [listing1, listing2])
+        self.assertListEqual(user.get_listings_in_followed_cities(), [listing1, listing2])
 
         user.unfollow(city1)
-        self.assertListEqual(user.view_listings_in_followed_cities(), [])
+        self.assertListEqual(user.get_listings_in_followed_cities(), [])
 
 
 if __name__ == "__main__":
