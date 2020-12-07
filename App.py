@@ -27,6 +27,8 @@ import models
 CORS(app)
 
 jwt = JWTManager(app)
+
+
 @app.route("/register", methods=["POST"])
 def register():
     request_json = request.json
@@ -93,8 +95,8 @@ def login():
 @app.route("/refresh", methods=["POST"])
 @jwt_refresh_token_required
 def refresh():
-    uid = get_jwt_identity()["id"]
-    return jsonify({"access_token": create_access_token(identity=uid)}), 200
+    cur_user = get_jwt_identity()
+    return jsonify({"access_token": create_access_token(identity=cur_user)}), 200
 
 
 # @TODO REMOVE THIS. Keeping it temporarily for reference
@@ -148,7 +150,9 @@ def update_profile():
     phone_number = request_json["phone_number"]
     description = request_json["description"]
 
-    return models.User.update_profile(user, password, first, last, image, phone_number, description)
+    return models.User.update_profile(
+        user, password, first, last, image, phone_number, description
+    )
 
 
 @app.route("/add_listing", methods=["POST"])
