@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+import json
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
@@ -21,7 +22,6 @@ from flask_jwt_extended import (
 )
 
 from flask_cors import CORS
-from werkzeug.security import safe_str_cmp
 import models
 
 CORS(app)
@@ -108,6 +108,195 @@ def test():
 @app.route("/", methods=["GET"])
 def home():
     return "Welcome home!"
+
+
+@app.route("/users", methods=["GET"])
+@jwt_required
+def get_users():
+    users = models.User.query.all()
+    return jsonify({"Users": [result.to_json() for result in users]})
+
+
+@app.route("/get_profile", methods=["GET"])
+@jwt_required
+def get_profile():
+    user_id = get_jwt_identity()["id"]
+    user = models.User.query.filter_by(id=user_id).first()
+
+    return models.User.get_profile(user)
+
+
+@app.route("/get_profile/<user_id>", methods=["GET"])
+@jwt_required
+def get_profile_by_user_id(user_id):
+    user = models.User.query.filter_by(id=user_id).first()
+
+    return models.User.get_profile_by_id(user)
+
+
+@app.route("/update_profile", methods=["PUT"])
+@jwt_required
+def update_profile():
+    user_id = get_jwt_identity()["id"]
+    user = models.User.query.filter_by(id=user_id).first()
+
+    request_json = request.json
+    password = request_json["password"]
+    name = request_json["name"]
+    first, last = name.split(" ")
+    image = request_json["image"]
+    phone_number = request_json["phone_number"]
+    description = request_json["description"]
+
+    return models.User.update_profile(user, password, first, last, image, phone_number, description)
+
+
+@app.route("/add_listing", methods=["POST"])
+@jwt_required
+def add_listing():
+    user_id = get_jwt_identity()["id"]
+    user = models.User.query.filter_by(id=user_id).first()
+
+    request_json = request.json
+    address = request_json["address"]
+    location = request_json["location"]
+    image = request_json["image"]
+    description = request_json["description"]
+
+    return models.User.add_listing(user, address, location, image, description)
+
+
+@app.route("/update_listing", methods=["PUT"])
+@jwt_required
+def update_listing():
+    user_id = get_jwt_identity()["id"]
+    user = models.User.query.filter_by(id=user_id).first()
+    listing = models.Listing.query.filter_by(owner=user).first()
+
+    request_json = request.json
+    address = request_json["address"]
+    location = request_json["location"]
+    image = request_json["image"]
+    description = request_json["description"]
+
+    return models.Listing.update_listing(listing, address, location, image, description)
+
+
+@app.route("/get_listing/<user_id>", methods=["GET"])
+@jwt_required
+def get_listing(user_id):
+    user = models.User.query.filter_by(id=user_id).first()
+    listing = models.Listing.query.filter_by(owner=user).first()
+
+    return listing.to_json()
+
+
+@app.route("/request/<requested_user_id>", methods=["POST"])
+@jwt_required
+def request_user(requested_user_id):
+    requesting_user_id = get_jwt_identity()["id"]
+    requesting_user = models.User.query.filter_by(id=requesting_user_id).first()
+    requested_user = models.User.query.filter_by(id=requested_user_id).first()
+
+    return models.User.request(requesting_user, requested_user)
+
+
+@app.route("/requests", methods=["GET"])
+@jwt_required
+def requests():
+    user_id = get_jwt_identity()["id"]
+    user = models.User.query.filter_by(id=user_id).first()
+    user_requests = user.requested
+    print(user_requests)
+
+    return "Requests"
+
+
+@app.route("/remove_request/<requested_user_id>", methods=["DELETE"])
+@jwt_required
+def remove_request(requested_user_id):
+    requesting_user_id = get_jwt_identity()["id"]
+    requesting_user = models.User.query.filter_by(id=requesting_user_id).first()
+    requested_user = models.User.query.filter_by(id=requested_user_id).first()
+
+    return models.User.remove_request(requesting_user, requested_user)
+
+
+@app.route("/follow/<city_name>", methods=["POST"])
+@jwt_required
+def follow_city(city_name):
+    user_id = get_jwt_identity()["id"]
+    user = models.User.query.filter_by(id=user_id).first()
+
+    return models.User.follow(user, city_name)
+
+
+@app.route("/unfollow/<city_name>", methods=["DELETE"])
+@jwt_required
+def unfollow_city(city_name):
+    user_id = get_jwt_identity()["id"]
+    user = models.User.query.filter_by(id=user_id).first()
+
+    return models.User.unfollow(user, city_name)
+
+
+@app.route("/listings", methods=["GET"])
+@jwt_required
+def get_listings_in_followed_cities():
+    user_id = get_jwt_identity()["id"]
+    user = models.User.query.filter_by(id=user_id).first()
+
+    return models.User.get_listings_in_followed_cities(user)
+
+
+@app.route("/listings/<selected_city>", methods=["GET"])
+@jwt_required
+def get_listings_in_selected_city(selected_city):
+    city = models.City.query.filter_by(name=selected_city).first()
+    listings = []
+
+    for listing in city.listings.all():
+        listings.append(listing)
+
+    return jsonify({"Listings": [result.to_json() for result in listings]})
+
+
+@app.route("/open_listing/<listing_id>", methods=["PUT"])
+@jwt_required
+def open_listing(listing_id):
+    listing = models.Listing.query.filter_by(id=listing_id).first()
+    listing.is_listed = True
+    db.session.commit()
+
+    return listing.to_json()
+
+
+@app.route("/close_listing/<listing_id>", methods=["PUT"])
+@jwt_required
+def close_listing(listing_id):
+    listing = models.Listing.query.filter_by(id=listing_id).first()
+    listing.is_listed = False
+    db.session.commit()
+
+    return listing.to_json()
+
+
+@app.route("/followed_cities", methods=["GET"])
+@jwt_required
+def get_followed_cities():
+    user_id = get_jwt_identity()["id"]
+    user = models.User.query.filter_by(id=user_id).first()
+
+    cities = user.cities
+
+    return jsonify({"Cities": [result.to_json() for result in cities]})
+
+
+@app.route("/cities", methods=["GET"])
+@jwt_required
+def cities():
+    all_cities = models.City.query.all()
+    return jsonify({"Cities": [result.to_json() for result in all_cities]})
 
 
 if __name__ == "__main__":

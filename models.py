@@ -1,4 +1,5 @@
 from datetime import datetime
+from flask import jsonify
 
 from App import db
 
@@ -39,13 +40,55 @@ class User(db.Model):
         self.last_name = last_name
         self.date = datetime.now()
 
+    def to_json(self):
+        return {
+            "UserID": self.id,
+            "Email": self.email,
+            "First Name": self.first_name,
+            "Last Name": self.last_name,
+            "Image": self.image,
+            "Phone Number": self.phone_number,
+            "Description": self.description,
+        }
+
+    def get_profile(self):
+        listing = self.listing
+
+        if listing is not None:
+            return listing.to_json()
+        else:
+            return self.to_json()
+
+    def get_profile_by_id(self):
+        listing = self.listing
+
+        if listing is not None:
+            return listing.to_json()
+        else:
+            return self.to_json()
+
+    def update_profile(self, password, first_name, last_name, image, phone_number, description):
+        self.password = password
+        self.first_name = first_name
+        self.last_name = last_name
+        self.image = image
+        self.phone_number = phone_number
+        self.description = description
+
+        db.session.add(self)
+        db.session.commit()
+
+        return self.to_json()
+
     def request(self, user):
         if not self.has_requested(user):
             self.requested.append(user)
+        return "Successfully requested"
 
     def remove_request(self, user):
         if self.has_requested(user):
             self.requested.remove(user)
+        return "Request removed"
 
     def has_requested(self, user):
         return self.requested.filter(
@@ -54,22 +97,55 @@ class User(db.Model):
     def view_requests(self):
         return self.requested.all()
 
-    def follow(self, city):
+    def follow(self, city_name):
+        city = City.query.filter_by(name=city_name).first()
+        if city is None:
+            city = City(city_name)
+            db.session.add(city)
+            db.session.commit()
+
         if not self.has_followed(city):
             self.cities.append(city)
+            db.session.commit()
+            return jsonify({"City": city.name})
 
-    def unfollow(self, city):
+        return jsonify({"Already Following": city.name})
+
+    def unfollow(self, city_name):
+        city = City.query.filter_by(name=city_name).first()
+        if city is None:
+            return jsonify({"City doesn't exist": city.name})
+
         if self.has_followed(city):
             self.cities.remove(city)
+            db.session.commit()
+            return jsonify({"City unfollowed": city.name})
+
+        return jsonify({"City not followed": city.name})
 
     def has_followed(self, city):
         return self.cities.filter(
             follows.c.city_id == city.id).count() > 0
 
-    def add_listing(self, listing):
-        self.listing = listing
+    def add_listing(self, address, location, image, description):
+        city = City.query.filter_by(name=location).first()
+        if city is None:
+            city = City(location)
+            db.session.add(city)
+            db.session.commit()
 
-    def view_listings_in_followed_cities(self):
+        listing = Listing(address, image, description, True, datetime.now())
+
+        db.session.add(listing)
+        db.session.commit()
+
+        listing.location = city
+        self.listing = listing
+        db.session.commit()
+
+        return listing.to_json()
+
+    def get_listings_in_followed_cities(self):
         listings_to_view = []
         for city in self.cities:
             for listing in city.listings.all():
@@ -80,7 +156,7 @@ class User(db.Model):
         except TypeError:
             print("No date provided.")
 
-        return listings_to_view
+        return jsonify({"Listings": [result.to_json() for result in listings_to_view]})
 
 
 class Listing(db.Model):
@@ -93,14 +169,44 @@ class Listing(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     city_id = db.Column(db.Integer, db.ForeignKey("city.id"))
 
-    def __init__(self, address, image, description, is_listed):
+    def __init__(self, address, image, description, is_listed, date):
         self.address = address
         self.image = image
         self.description = description
         self.is_listed = is_listed
+        self.date = date
+
+    def to_json(self):
+        return {
+            "ListingID": self.id,
+            "Owner": self.owner.to_json(),
+            "Address": self.address,
+            "City": self.location.name,
+            "Image": self.image,
+            "Description": self.description,
+            "is_listed": self.is_listed,
+            "Date": self.date,
+        }
 
     def listing_clicked(self):
         return self.user_id
+
+    def update_listing(self, address, location, image, description):
+        city = City.query.filter_by(name=location).first()
+        if city is None:
+            city = City(location)
+            db.session.add(city)
+            db.session.commit()
+
+        self.address = address
+        self.location = city
+        self.image = image
+        self.description = description
+
+        db.session.add(self)
+        db.session.commit()
+
+        return self.to_json()
 
 
 class City(db.Model):
@@ -112,3 +218,7 @@ class City(db.Model):
     def __init__(self, name):
         self.name = name
 
+    def to_json(self):
+        return {
+            "Name": self.name,
+        }
