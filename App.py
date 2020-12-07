@@ -292,5 +292,12 @@ def get_followed_cities():
     return jsonify({"Cities": [result.to_json() for result in cities]})
 
 
+@app.route("/cities", methods=["GET"])
+@jwt_required
+def cities():
+    all_cities = models.City.query.all()
+    return jsonify({"Cities": [result.to_json() for result in all_cities]})
+
+
 if __name__ == "__main__":
     app.run(port=5001)
