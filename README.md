@@ -32,7 +32,7 @@ Now you can run via `python3 App.py`
 ### 1) Install Virtual Environment 
 ```pip install virtualenv```
 
-### 2) cd to your project directory and run virtualenv to create the new virtual environment.
+### 2) CD to your project directory then run virtualenv to create the new virtual environment.
 The following commands will create a new virtual environment under my-project/my-venv.
 ```
    cd my-project
