@@ -48,24 +48,15 @@ class User(db.Model):
             "Last Name": self.last_name,
             "Image": self.image,
             "Phone Number": self.phone_number,
-            "Description": self.description,
+            "UserDescription": self.description,
+            "Listing": self.listing.to_json(),
         }
 
     def get_profile(self):
-        listing = self.listing
-
-        if listing is not None:
-            return listing.to_json()
-        else:
-            return self.to_json()
+        return self.to_json()
 
     def get_profile_by_id(self):
-        listing = self.listing
-
-        if listing is not None:
-            return listing.to_json()
-        else:
-            return self.to_json()
+        return self.to_json()
 
     def update_profile(self, password, first_name, last_name, image, phone_number, description):
         self.password = password
@@ -99,17 +90,13 @@ class User(db.Model):
 
     def follow(self, city_name):
         city = City.query.filter_by(name=city_name).first()
-        if city is None:
-            city = City(city_name)
-            db.session.add(city)
-            db.session.commit()
 
         if not self.has_followed(city):
             self.cities.append(city)
             db.session.commit()
             return jsonify({"City": city.name})
 
-        return jsonify({"Already Following": city.name})
+        return jsonify({"Followed": city.name})
 
     def unfollow(self, city_name):
         city = City.query.filter_by(name=city_name).first()
@@ -129,21 +116,18 @@ class User(db.Model):
 
     def add_listing(self, address, location, image, description):
         city = City.query.filter_by(name=location).first()
+
         if city is None:
             city = City(location)
             db.session.add(city)
             db.session.commit()
 
         listing = Listing(address, image, description, True, datetime.now())
+        listing.location = city
+        self.listing = listing
 
         db.session.add(listing)
         db.session.commit()
-
-        listing.location = city
-        self.listing = listing
-        db.session.commit()
-
-        return listing.to_json()
 
     def get_listings_in_followed_cities(self):
         listings_to_view = []
@@ -179,7 +163,6 @@ class Listing(db.Model):
     def to_json(self):
         return {
             "ListingID": self.id,
-            "Owner": self.owner.to_json(),
             "Address": self.address,
             "City": self.location.name,
             "Image": self.image,
