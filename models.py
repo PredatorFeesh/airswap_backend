@@ -81,12 +81,15 @@ class User(db.Model):
     def request(self, user):
         if not self.has_requested(user):
             self.requested.append(user)
-        return "Successfully requested"
+            db.session.commit()
+
+        return user.to_json()
 
     def remove_request(self, user):
         if self.has_requested(user):
             self.requested.remove(user)
-        return "Request removed"
+            db.session.commit()
+        return user.to_json()
 
     def has_requested(self, user):
         return self.requested.filter(requests.c.requestee == user.id).count() > 0
@@ -133,6 +136,21 @@ class User(db.Model):
 
         db.session.add(listing)
         db.session.commit()
+
+    def open_listing(self):
+        listing = self.listing
+        listing.is_listed = True
+        db.session.commit()
+
+        return listing.to_json()
+
+    def close_listing(self):
+
+        listing = self.listing
+        listing.is_listed = False
+        db.session.commit()
+
+        return listing.to_json()
 
     def get_listings_in_followed_cities(self):
         listings_to_view = []
