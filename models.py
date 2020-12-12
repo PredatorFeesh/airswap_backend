@@ -3,16 +3,18 @@ from flask import jsonify
 
 from App import db
 
-follows = db.Table("follows",
-                   db.Column("user_id", db.Integer, db.ForeignKey("user.id")),
-                   db.Column("city_id", db.Integer, db.ForeignKey("city.id")),
-                   db.Column("date", db.Date)
-                   )
+follows = db.Table(
+    "follows",
+    db.Column("user_id", db.Integer, db.ForeignKey("user.id")),
+    db.Column("city_id", db.Integer, db.ForeignKey("city.id")),
+    db.Column("date", db.Date),
+)
 
-requests = db.Table("requests",
-                    db.Column("requester", db.Integer, db.ForeignKey("user.id")),
-                    db.Column("requestee", db.Integer, db.ForeignKey("user.id"))
-                    )
+requests = db.Table(
+    "requests",
+    db.Column("requester", db.Integer, db.ForeignKey("user.id")),
+    db.Column("requestee", db.Integer, db.ForeignKey("user.id")),
+)
 
 
 class User(db.Model):
@@ -27,11 +29,17 @@ class User(db.Model):
     description = db.Column("description", db.Text, nullable=True)
 
     listing = db.relationship("Listing", backref="owner", uselist=False)
-    requested = db.relationship("User", secondary=requests,
-                                primaryjoin=(requests.c.requester == id),
-                                secondaryjoin=(requests.c.requestee == id),
-                                backref=db.backref("requests", lazy="dynamic"), lazy="dynamic")
-    cities = db.relationship("City", secondary=follows, back_populates="followers", lazy="dynamic")
+    requested = db.relationship(
+        "User",
+        secondary=requests,
+        primaryjoin=(requests.c.requester == id),
+        secondaryjoin=(requests.c.requestee == id),
+        backref=db.backref("requests", lazy="dynamic"),
+        lazy="dynamic",
+    )
+    cities = db.relationship(
+        "City", secondary=follows, back_populates="followers", lazy="dynamic"
+    )
 
     def __init__(self, email, password, first_name, last_name):
         self.email = email
@@ -40,7 +48,7 @@ class User(db.Model):
         self.last_name = last_name
         self.date = datetime.now()
 
-    def to_json(self):
+    def to_json(self, original=True):
         return {
             "UserID": self.id,
             "Email": self.email,
@@ -49,7 +57,7 @@ class User(db.Model):
             "Image": self.image,
             "Phone Number": self.phone_number,
             "UserDescription": self.description,
-            "Listing": self.listing.to_json(),
+            "Listing": self.listing.to_json(False) if original else {},
         }
 
     def get_profile(self):
@@ -58,8 +66,7 @@ class User(db.Model):
     def get_profile_by_id(self):
         return self.to_json()
 
-    def update_profile(self, password, first_name, last_name, image, phone_number, description):
-        self.password = password
+    def update_profile(self, first_name, last_name, image, phone_number, description):
         self.first_name = first_name
         self.last_name = last_name
         self.image = image
@@ -82,8 +89,7 @@ class User(db.Model):
         return "Request removed"
 
     def has_requested(self, user):
-        return self.requested.filter(
-            requests.c.requestee == user.id).count() > 0
+        return self.requested.filter(requests.c.requestee == user.id).count() > 0
 
     def view_requests(self):
         return self.requested.all()
@@ -111,8 +117,7 @@ class User(db.Model):
         return jsonify({"City not followed": city.name})
 
     def has_followed(self, city):
-        return self.cities.filter(
-            follows.c.city_id == city.id).count() > 0
+        return self.cities.filter(follows.c.city_id == city.id).count() > 0
 
     def add_listing(self, address, location, image, description):
         city = City.query.filter_by(name=location).first()
@@ -160,9 +165,10 @@ class Listing(db.Model):
         self.is_listed = is_listed
         self.date = date
 
-    def to_json(self):
+    def to_json(self, original=True):
         return {
             "ListingID": self.id,
+            "Owner": self.owner.to_json(False) if original else {},
             "Address": self.address,
             "City": self.location.name,
             "Image": self.image,
@@ -196,7 +202,9 @@ class City(db.Model):
     id = db.Column("id", db.Integer, primary_key=True, autoincrement=True)
     name = db.Column("name", db.String(25))
     listings = db.relationship("Listing", backref="location", lazy="dynamic")
-    followers = db.relationship("User", secondary=follows, back_populates="cities", lazy="dynamic")
+    followers = db.relationship(
+        "User", secondary=follows, back_populates="cities", lazy="dynamic"
+    )
 
     def __init__(self, name):
         self.name = name

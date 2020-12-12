@@ -62,7 +62,9 @@ def register():
     # Now add the user to the database
     # @IFTIME: Encrypt password
     user_db = models.User(email, password, first, second)
-    models.User.add_listing(user_db, listing_address, listing_location, listing_image, listing_description)
+    models.User.add_listing(
+        user_db, listing_address, listing_location, listing_image, listing_description
+    )
 
     access_token = create_access_token(identity={"id": user_db.id})
     refresh_token = create_refresh_token(identity={"id": user_db.id})
@@ -148,7 +150,6 @@ def update_profile():
     user = models.User.query.filter_by(id=user_id).first()
 
     request_json = request.json
-    password = request_json["password"]
     name = request_json["name"]
     first, last = name.split(" ")
     image = request_json["image"]
@@ -156,7 +157,7 @@ def update_profile():
     description = request_json["description"]
 
     return models.User.update_profile(
-        user, password, first, last, image, phone_number, description
+        user, first, last, image, phone_number, description
     )
 
 
