@@ -45,6 +45,12 @@ def register():
     password = request_json["password"]
     name = request_json["name"]
 
+    # Listing Info
+    listing_address = request_json["address"]
+    listing_location = request_json["location"]
+    listing_image = request_json["image"]
+    listing_description = request_json["description"]
+
     # Now we need to split first and second.
     first, second = name.split(" ")
 
@@ -56,8 +62,7 @@ def register():
     # Now add the user to the database
     # @IFTIME: Encrypt password
     user_db = models.User(email, password, first, second)
-    db.session.add(user_db)
-    db.session.commit()
+    models.User.add_listing(user_db, listing_address, listing_location, listing_image, listing_description)
 
     access_token = create_access_token(identity={"id": user_db.id})
     refresh_token = create_refresh_token(identity={"id": user_db.id})
@@ -153,21 +158,6 @@ def update_profile():
     return models.User.update_profile(
         user, password, first, last, image, phone_number, description
     )
-
-
-@app.route("/add_listing", methods=["POST"])
-@jwt_required
-def add_listing():
-    user_id = get_jwt_identity()["id"]
-    user = models.User.query.filter_by(id=user_id).first()
-
-    request_json = request.json
-    address = request_json["address"]
-    location = request_json["location"]
-    image = request_json["image"]
-    description = request_json["description"]
-
-    return models.User.add_listing(user, address, location, image, description)
 
 
 @app.route("/update_listing", methods=["PUT"])
