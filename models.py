@@ -66,10 +66,7 @@ class User(db.Model):
     def get_profile_by_id(self):
         return self.to_json()
 
-    def update_profile(
-        self, password, first_name, last_name, image, phone_number, description
-    ):
-        self.password = password
+    def update_profile(self, first_name, last_name, image, phone_number, description):
         self.first_name = first_name
         self.last_name = last_name
         self.image = image
