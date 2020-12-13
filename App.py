@@ -196,15 +196,26 @@ def request_user(requested_user_id):
     return models.User.request(requesting_user, requested_user)
 
 
-@app.route("/requests", methods=["GET"])
+@app.route("/sent_requests", methods=["GET"])
 @jwt_required
-def requests():
+def sent_requests():
     user_id = get_jwt_identity()["id"]
     user = models.User.query.filter_by(id=user_id).first()
-    user_requests = user.requested
-    print(user_requests)
 
-    return "Requests"
+    user_sent_requests = user.requested.all()
+
+    return jsonify({"Requested": [result.to_json() for result in user_sent_requests[:]]})
+
+
+@app.route("/received_requests", methods=["GET"])
+@jwt_required
+def received_requests():
+    user_id = get_jwt_identity()["id"]
+    user = models.User.query.filter_by(id=user_id).first()
+
+    user_received_requests = models.User.query.filter(models.User.requested.contains(user)).all()
+
+    return jsonify({"Requested by": [result.to_json() for result in user_received_requests[:]]})
 
 
 @app.route("/remove_request/<requested_user_id>", methods=["DELETE"])
@@ -256,24 +267,22 @@ def get_listings_in_selected_city(selected_city):
     return jsonify({"Listings": [result.to_json() for result in listings]})
 
 
-@app.route("/open_listing/<listing_id>", methods=["PUT"])
+@app.route("/open_listing", methods=["PUT"])
 @jwt_required
-def open_listing(listing_id):
-    listing = models.Listing.query.filter_by(id=listing_id).first()
-    listing.is_listed = True
-    db.session.commit()
+def open_listing():
+    user_id = get_jwt_identity()["id"]
+    user = models.User.query.filter_by(id=user_id).first()
 
-    return listing.to_json()
+    return models.User.open_listing(user)
 
 
-@app.route("/close_listing/<listing_id>", methods=["PUT"])
+@app.route("/close_listing", methods=["PUT"])
 @jwt_required
-def close_listing(listing_id):
-    listing = models.Listing.query.filter_by(id=listing_id).first()
-    listing.is_listed = False
-    db.session.commit()
+def close_listing():
+    user_id = get_jwt_identity()["id"]
+    user = models.User.query.filter_by(id=user_id).first()
 
-    return listing.to_json()
+    return models.User.close_listing(user)
 
 
 @app.route("/followed_cities", methods=["GET"])
