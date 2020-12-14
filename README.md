@@ -162,8 +162,11 @@ Swap based actions
 # Authors:
 
  -Pavlo Aleksyeyev, Pavlo.Aleksyeyev@gmail.com, https://github.com/PaulAlek
+ 
  -Natalia Harrow, nataliaharrow@gmail.com, https://github.com/nataliaharrow
+ 
  -Jason Azayev, azayevjason@gmail.com, https://github.com/PredatorFeesh
+ 
 
 
 
