@@ -262,7 +262,8 @@ def get_listings_in_selected_city(selected_city):
     listings = []
 
     for listing in city.listings.all():
-        listings.append(listing)
+        if listing.is_listed:
+            listings.append(listing)
 
     return jsonify({"Listings": [result.to_json() for result in listings]})
 
