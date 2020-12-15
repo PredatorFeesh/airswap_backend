@@ -156,7 +156,8 @@ class User(db.Model):
         listings_to_view = []
         for city in self.cities:
             for listing in city.listings.all():
-                listings_to_view.append(listing)
+                if listing.is_listed:
+                    listings_to_view.append(listing)
 
         try:
             listings_to_view.sort(key=lambda listing: listing.date)
