@@ -129,25 +129,25 @@ As a swapper, I want to be able to:
 
 Auth based actions
 
- -Register an account
- -Login to my account
- -Log out of my account
- -Update my profile
- -Update my listing
- -Open my listing
- -Close my listing
+- Register an account
+- Login to my account
+- Log out of my account
+- Update my profile
+- Update my listing
+- Open my listing
+- Close my listing
 
 Swap based actions
 
- -Follow a city
- -Unfollow a city
- -View listings of a given city
- -View listings in cities that I liked
- -Visit the profile and listing of any listing I see
- -Request to swap with someone else
- -Remove request to swap with someone else
- -View all the requests I sent
- -View all the requests I received
+ - Follow a city
+ - Unfollow a city
+ - View listings of a given city
+ - View listings in cities that I liked
+ - Visit the profile and listing of any listing I see
+ - Request to swap with someone else
+ - Remove request to swap with someone else
+ - View all the requests I sent
+ - View all the requests I received
 
 ## References Used
 
@@ -161,11 +161,11 @@ Swap based actions
 
 # Authors:
 
- -Pavlo Aleksyeyev, Pavlo.Aleksyeyev@gmail.com, https://github.com/PaulAlek
- 
- -Natalia Harrow, nataliaharrow@gmail.com, https://github.com/nataliaharrow
- 
- -Jason Azayev, azayevjason@gmail.com, https://github.com/PredatorFeesh
+- Pavlo Aleksyeyev, Pavlo.Aleksyeyev@gmail.com, https://github.com/PaulAlek
+
+- Natalia Harrow, nataliaharrow@gmail.com, https://github.com/nataliaharrow
+
+- Jason Azayev, azayevjason@gmail.com, https://github.com/PredatorFeesh
  
 
 
