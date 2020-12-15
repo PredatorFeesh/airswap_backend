@@ -1,8 +1,7 @@
 from App import app, db
 from models import User, Listing, City
-from datetime import datetime
 import unittest
-
+from flask import jsonify
 
 class UserModelCase(unittest.TestCase):
     def setUp(self):
@@ -20,6 +19,7 @@ class UserModelCase(unittest.TestCase):
             last_name="Doe",
             password="test123",
         )
+        user1.add_listing("Address", "Boston", "image", "Description")
 
         user2 = User(
             email="testtwo@email.com",
@@ -27,6 +27,7 @@ class UserModelCase(unittest.TestCase):
             last_name="Smith",
             password="test123",
         )
+        user2.add_listing("Address", "New York", "image", "Description")
 
         user3 = User(
             email="testthree@email.com",
@@ -34,6 +35,7 @@ class UserModelCase(unittest.TestCase):
             last_name="Green",
             password="test123",
         )
+        user3.add_listing("Address", "London", "image", "Description")
 
         db.session.add(user1)
         db.session.add(user2)
@@ -66,34 +68,30 @@ class UserModelCase(unittest.TestCase):
             last_name="Doe",
             password="test123",
         )
-        city = City(name="New York")
-        listing = Listing(
-            address="Test address",
-            image="default.jpg",
-            description="Test description",
-            is_listed=True,
-            date=datetime.now()
-        )
+        user.add_listing("Test address", "London", "default.jpg", "Test description", )
 
         db.session.add(user)
-        db.session.add(city)
-        db.session.add(listing)
         db.session.commit()
-        self.assertEqual(listing.owner, None)
-        self.assertEqual(listing.location, None)
 
-        listing.location = city
-        self.assertEqual(listing.location, city)
-        self.assertEqual(listing.location.id, city.id)
-        self.assertEqual(listing.location.name, "New York")
+        listing = user.listing
+        city = City.query.filter_by(name="London").first()
 
-        user.add_listing(listing)
         self.assertEqual(listing.owner.id, user.id)
-        self.assertEqual(user.listing, listing)
+        self.assertEqual(listing.city_id, city.id)
 
-        self.assertEqual(city.listings.first(), listing)
+        listing.update_listing("Updated address", "Paris", "UpdatedImage", "Updated Description")
+        db.session.commit()
 
-        self.assertEqual(listing.listing_clicked(), listing.owner.id)
+        self.assertEqual(listing.address, "Updated address")
+        self.assertEqual(listing.image, "UpdatedImage")
+        self.assertEqual(listing.description, "Updated Description")
+        city = City.query.filter_by(name="Paris").first()
+        self.assertEqual(listing.city_id, city.id)
+
+        user.close_listing()
+        self.assertFalse(listing.is_listed)
+        user.open_listing()
+        self.assertTrue(listing.is_listed)
 
     def test_follows(self):
         user1 = User(
@@ -108,68 +106,34 @@ class UserModelCase(unittest.TestCase):
             last_name="Smith",
             password="test123",
         )
-        city1 = City(name="New York")
-        city2 = City(name="London")
+
+        city1 = City(name="London")
+        city2 = City(name="New York")
 
         db.session.add(user1)
         db.session.add(city1)
         db.session.add(user2)
         db.session.add(city2)
+
         db.session.commit()
 
-        user1.follow(city1)
-        self.assertEqual(user1.cities.count(), 1)
-        self.assertEqual(user1.cities.first(), city1)
-        self.assertEqual(city1.followers.count(), 1)
-        user1.cities.append(city2)
-        self.assertEqual(user1.cities.count(), 2)
-        self.assertEqual(city2.followers.count(), 1)
-        self.assertEqual(city2.followers.first(), user1)
+        with app.app_context():
+            user1.follow(city1.name)
+            self.assertEqual(user1.cities.count(), 1)
+            self.assertEqual(user1.cities.first(), city1)
+            self.assertEqual(city1.followers.count(), 1)
+            user1.follow(city2.name)
+            self.assertEqual(user1.cities.count(), 2)
+            self.assertEqual(city2.followers.count(), 1)
+            self.assertEqual(city2.followers.first(), user1)
 
-        user2.follow(city1)
-        self.assertEqual(user2.cities.count(), 1)
-        self.assertEqual(city1.followers.count(), 2)
+            user2.follow(city1.name)
+            self.assertEqual(user2.cities.count(), 1)
+            self.assertEqual(city1.followers.count(), 2)
 
-        user2.unfollow(city1)
-        self.assertEqual(user2.cities.count(), 0)
-        self.assertEqual(city1.followers.count(), 1)
-
-    def test_view_listings(self):
-        user = User(
-            email="testone@email.com",
-            first_name="John",
-            last_name="Doe",
-            password="test123",
-        )
-        city1 = City(name="New York")
-        listing1 = Listing(
-            address="Test address",
-            image="default.jpg",
-            description="Test description",
-            is_listed=True,
-            date=datetime.now()
-        )
-        listing2 = Listing(
-            address="Test address 2",
-            image="default.jpg",
-            description="Test description 2",
-            is_listed=True,
-            date=datetime.now()
-        )
-
-        db.session.add(user)
-        db.session.add(city1)
-        db.session.add(listing1)
-        db.session.commit()
-
-        listing1.location = city1
-        listing2.location = city1
-        user.follow(city1)
-
-        self.assertListEqual(user.get_listings_in_followed_cities(), [listing1, listing2])
-
-        user.unfollow(city1)
-        self.assertListEqual(user.get_listings_in_followed_cities(), [])
+            user2.unfollow(city1.name)
+            self.assertEqual(user2.cities.count(), 0)
+            self.assertEqual(city1.followers.count(), 1)
 
 
 if __name__ == "__main__":
